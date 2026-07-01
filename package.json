@@ -4,6 +4,6 @@
   "description": "Edge TTS with Vercel",
   "type": "module",
   "dependencies": {
-    "edge-tts": "^1.0.0"
+    
   }
 }
