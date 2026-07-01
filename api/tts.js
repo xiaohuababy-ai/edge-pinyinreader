@@ -1,14 +1,7 @@
-// api/tts.js - Vercel Serverless Function
-
-//import { EdgeTTS } from 'edge-tts';
-
-// 动态导入，自动适配不同的导出方式
-const EdgeTTSModule = await import('edge-tts');
-const EdgeTTS = EdgeTTSModule.default || EdgeTTSModule.EdgeTTS || EdgeTTSModule;
+// 尝试默认导入整个模块
+import edgeTTS from 'edge-tts';
 
 export default async function handler(req, res) {
-     
-    // 只允许 POST 请求
     if (req.method !== 'POST') {
         return res.status(405).json({ error: '请使用 POST 请求' });
     }
@@ -22,8 +15,8 @@ export default async function handler(req, res) {
 
         console.log(`🎤 合成语音: "${text}" (${voice})`);
 
-        const tts = new EdgeTTS();
-        const audioBuffer = await tts.speak(text, {
+        // 直接使用 edgeTTS.speak，不需要 new
+        const audioBuffer = await edgeTTS.speak(text, {
             voice: voice,
             rate: rate,
             pitch: pitch,
@@ -41,7 +34,7 @@ export default async function handler(req, res) {
         console.error('❌ TTS 错误:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: error.message || '内部服务器错误'
         });
     }
 }
