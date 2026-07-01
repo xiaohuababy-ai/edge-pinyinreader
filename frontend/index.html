@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>逐字拼音朗读器 - Edge TTS 版</title>
+    <style>
+        /* ===== 全局样式 ===== */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #f0f2f5;
+            color: #1a1a2e;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px 35px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+        h1 {
+            text-align: center;
+            color: #2d3436;
+            margin-top: 0;
+            font-weight: 700;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #636e72;
+            margin: -5px 0 25px 0;
+            font-size: 15px;
+        }
+        /* ===== 控制栏 ===== */
+        .control-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+            margin: 12px 0 18px;
+            padding: 10px 18px;
+            background: #f1f3f5;
+            border-radius: 40px;
+        }
+        .control-bar label {
+            font-weight: 600;
+            font-size: 15px;
+            color: #2d3436;
+        }
+        .control-bar select,
+        .control-bar input[type="range"] {
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid #ced4da;
+            font-size: 14px;
+            background: white;
+        }
+        .control-bar select {
+            min-width: 180px;
+        }
+        .control-bar input[type="range"] {
+            width: 100px;
+            accent-color: #6c5ce7;
+            padding: 0;
+        }
+        .control-bar .value-display {
+            font-weight: 600;
+            color: #6c5ce7;
+            min-width: 32px;
+            font-size: 14px;
+        }
+        .control-bar .unit {
+            font-size: 12px;
+            color: #b2bec3;
+        }
+        .control-bar .separator {
+            color: #b2bec3;
+            font-size: 18px;
+            padding: 0 4px;
+        }
+        /* ===== 文本框 ===== */
+        textarea {
+            width: 100%;
+            height: 110px;
+            padding: 14px 18px;
+            font-size: 17px;
+            border: 2px solid #dee2e6;
+            border-radius: 14px;
+            font-family: inherit;
+            resize: vertical;
+            background: #fafbfc;
+            transition: 0.2s;
+        }
+        textarea:focus {
+            border-color: #6c5ce7;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(108,92,231,0.08);
+        }
+        /* ===== 按钮组 ===== */
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 18px 0 20px;
+        }
+        button {
+            padding: 10px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #e9ecef;
+            color: #2d3436;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        button.primary {
+            background: #6c5ce7;
+            color: white;
+        }
+        button.primary:hover {
+            background: #5a4bd1;
+        }
+        button.success {
+            background: #00b894;
+            color: white;
+        }
+        button.success:hover {
+            background: #00a381;
+        }
+        button.danger {
+            background: #e17055;
+            color: white;
+        }
+        button.danger:hover {
+            background: #d63031;
+        }
+        button.outline {
+            background: transparent;
+            color: #636e72;
+            border: 2px solid #dfe6e9;
+        }
+        button.outline:hover {
+            background: #f1f2f6;
+        }
+        button.sample-btn {
+            background: transparent;
+            color: #6c5ce7;
+            border: 2px solid #dfe6e9;
+        }
+        button.sample-btn:hover {
+            background: #f8f7ff;
+            border-color: #6c5ce7;
+        }
+        /* ===== 显示区域 ===== */
+        #displayArea {
+            margin-top: 20px;
+            padding: 24px 22px;
+            min-height: 110px;
+            background: #fafbfc;
+            border-radius: 16px;
+            font-size: 30px;
+            line-height: 2.4;
+            letter-spacing: 2px;
+            word-wrap: break-word;
+            border: 2px solid #e9ecef;
+            transition: all 0.2s;
+        }
+        /* ===== 字符容器 ===== */
+        .char-container {
+            display: inline-block;
+            text-align: center;
+            margin: 0 2px;
+            padding: 4px 3px;
+            border-radius: 8px;
+            transition: all 0.15s;
+            position: relative;
+            min-width: 28px;
+        }
+        .pinyin {
+            display: block;
+            font-size: 16px;
+            color: #d63031;
+            font-weight: 500;
+            height: 24px;
+            line-height: 24px;
+            margin-bottom: 1px;
+            letter-spacing: 0.5px;
+        }
+        .char {
+            display: block;
+            font-size: 32px;
+            font-weight: 500;
+            color: #2d3436;
+            line-height: 1.2;
+        }
+        /* ===== 高亮 ===== */
+        .char-container.active {
+            background: #fdcb6e;
+            border-radius: 10px;
+            transform: scale(1.04);
+            box-shadow: 0 4px 16px rgba(253,203,110,0.35);
+        }
+        .char-container.active .pinyin {
+            color: #c0392b;
+            font-weight: 700;
+        }
+        .char-container.active .char {
+            color: #000;
+            font-weight: 700;
+        }
+        .char-container.non-chinese .pinyin {
+            color: #b2bec3;
+            font-size: 13px;
+        }
+        .char-container.non-chinese .char {
+            color: #636e72;
+            font-size: 26px;
+        }
+        /* ===== 状态栏 ===== */
+        .status-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            align-items: center;
+            margin: 18px 0 6px;
+        }
+        .status {
+            font-size: 15px;
+            color: #636e72;
+            font-weight: 500;
+            background: #f1f2f6;
+            padding: 4px 18px;
+            border-radius: 30px;
+        }
+        .status.info {
+            background: #dfe6e9;
+            color: #2d3436;
+        }
+        .footer-note {
+            text-align: center;
+            color: #b2bec3;
+            font-size: 13px;
+            margin-top: 22px;
+            border-top: 1px solid #f1f2f6;
+            padding-top: 20px;
+        }
+        .footer-note .highlight {
+            color: #e17055;
+        }
+        /* ===== 响应式 ===== */
+        @media (max-width: 600px) {
+            .container {
+                padding: 18px;
+            }
+            #displayArea {
+                font-size: 24px;
+                line-height: 2.2;
+            }
+            .char {
+                font-size: 24px;
+            }
+            .pinyin {
+                font-size: 13px;
+                height: 20px;
+                line-height: 20px;
+            }
+            .control-bar {
+                flex-direction: column;
+                align-items: stretch;
+                border-radius: 20px;
+            }
+            .control-bar select {
+                min-width: unset;
+            }
+            .control-bar input[type="range"] {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📖 逐字拼音朗读器</h1>
+        <p class="subtitle">标注拼音 · 逐字朗读 · 支持 Edge TTS 云端语音</p>
+
+        <!-- ===== 控制栏 ===== -->
+        <div class="control-bar">
+            <label for="voiceSelect">🎤 音色</label>
+            <select id="voiceSelect">
+                <option value="">加载中...</option>
+            </select>
+
+            <span class="separator">|</span>
+
+            <label for="rateSlider">🐢 语速</label>
+            <input type="range" id="rateSlider" min="0.3" max="2.0" step="0.05" value="0.75">
+            <span class="value-display" id="rateValue">0.75</span>
+
+            <span class="separator">|</span>
+
+            <label for="pauseSlider">⏸ 停顿</label>
+            <input type="range" id="pauseSlider" min="0" max="400" step="10" value="120">
+            <span class="value-display" id="pauseValue">120</span>
+            <span class="unit">ms</span>
+        </div>
+
+        <!-- ===== 文本框 ===== -->
+        <textarea id="textInput" placeholder="请在此输入或粘贴中文文本…">春眠不觉晓，处处闻啼鸟。夜来风雨声，花落知多少。</textarea>
+
+        <!-- ===== 按钮组 ===== -->
+        <div class="button-group">
+            <button class="primary" id="annotateBtn">🏷️ 标注拼音</button>
+            <button class="success" id="speakBtn">▶ 朗读</button>
+            <button class="danger" id="stopBtn">⏹ 停止</button>
+            <button class="outline" id="clearBtn">🗑️ 清空</button>
+            <button class="sample-btn" id="sampleBtn">📄 示例</button>
+        </div>
+
+        <!-- ===== 显示区域 ===== -->
+        <div id="displayArea">
+            <span style="color:#b2bec3; font-size:18px; letter-spacing:normal;">点击「标注拼音」开始</span>
+        </div>
+
+        <!-- ===== 状态栏 ===== -->
+        <div class="status-bar">
+            <span class="status" id="statusText">就绪</span>
+            <span class="status info" id="modeHint">模式: 拼音</span>
+        </div>
+
+        <p class="footer-note">
+            💡 推荐使用 Chrome 或 Edge 浏览器 · 
+            <span class="highlight">Edge TTS</span> 云端语音需联网
+        </p>
+    </div>
+
+    <script>
+        (function() {
+            "use strict";
+
+            // ============================================================
+            // 1. DOM 引用
+            // ============================================================
+            const textInput = document.getElementById('textInput');
+            const displayArea = document.getElementById('displayArea');
+            const statusText = document.getElementById('statusText');
+            const modeHint = document.getElementById('modeHint');
+            const voiceSelect = document.getElementById('voiceSelect');
+            const rateSlider = document.getElementById('rateSlider');
+            const rateValue = document.getElementById('rateValue');
+            const pauseSlider = document.getElementById('pauseSlider');
+            const pauseValue = document.getElementById('pauseValue');
+            const annotateBtn = document.getElementById('annotateBtn');
+            const speakBtn = document.getElementById('speakBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const sampleBtn = document.getElementById('sampleBtn');
+
+            // ============================================================
+            // 2. 状态变量
+            // ============================================================
+            let isSpeaking = false;
+            let currentCharIndex = 0;
+            let charsArray = [];
+            let speechTimer = null;
+            let utterance = null;
+            let isPaused = false; // 标记是否暂停
+
+            // Vercel 后端地址（部署后替换为你的实际地址）
+            const API_BASE = 'https://你的项目名.vercel.app/api';
+
+            // ============================================================
+            // 3. 加载拼音库 (pinyin-pro)
+            // ============================================================
+            function loadPinyinLibrary() {
+                return new Promise((resolve, reject) => {
+                    if (window.pinyinPro) {
+                        resolve(window.pinyinPro);
+                        return;
+                    }
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.0/dist/index.js';
+                    let loaded = false;
+                    const timeout = setTimeout(() => {
+                        if (!loaded) reject(new Error('拼音库加载超时'));
+                    }, 10000);
+                    script.onload = () => {
+                        loaded = true;
+                        clearTimeout(timeout);
+                        if (window.pinyinPro) resolve(window.pinyinPro);
+                        else reject(new Error('拼音库加载失败'));
+                    };
+                    script.onerror = () => {
+                        clearTimeout(timeout);
+                        reject(new Error('拼音库加载失败，请检查网络'));
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+
+            // ============================================================
+            // 4. 核心：标注拼音
+            // ============================================================
+            async function annotateText(text) {
+                if (!text.trim()) {
+                    displayArea.innerHTML = '<span style="color:#b2bec3; font-size:18px;">请输入要标注的文字</span>';
+                    statusText.textContent = '请输入文字';
+                    return [];
+                }
+
+                try {
+                    statusText.textContent = '⏳ 加载拼音库...';
+                    const pinyinPro = await loadPinyinLibrary();
+
+                    const chars = [...text];
+                    const result = [];
+
+                    for (let ch of chars) {
+                        const isChinese = /[\u4e00-\u9fa5]/.test(ch);
+                        let pinyin = '';
+                        if (isChinese) {
+                            try {
+                                pinyin = pinyinPro.pinyin(ch, { toneType: 'symbol' });
+                            } catch (e) {
+                                pinyin = '';
+                            }
+                        }
+                        result.push({
+                            char: ch,
+                            pinyin: pinyin,
+                            isChinese: isChinese
+                        });
+                    }
+
+                    renderChars(result);
+                    statusText.textContent = `✅ 标注完成，共 ${result.length} 个字符`;
+                    return result;
+
+                } catch (error) {
+                    console.error('标注失败:', error);
+                    statusText.textContent = '❌ 标注失败: ' + error.message;
+                    displayArea.innerHTML = `<span style="color:#e17055;">⚠️ 拼音标注失败，请检查网络后刷新</span>`;
+                    return [];
+                }
+            }
+
+            // ============================================================
+            // 5. 渲染字符
+            // ============================================================
+            function renderChars(charsArrayData) {
+                charsArray = charsArrayData;
+                if (!charsArray || charsArray.length === 0) {
+                    displayArea.innerHTML = '<span style="color:#b2bec3; font-size:18px;">没有可显示的内容</span>';
+                    return;
+                }
+
+                let html = '';
+                for (let i = 0; i < charsArray.length; i++) {
+                    const item = charsArray[i];
+                    const cls = item.isChinese ? 'char-container' : 'char-container non-chinese';
+                    const pinyinDisplay = (item.isChinese && item.pinyin) ? item.pinyin : '&nbsp;';
+                    const charDisplay = item.char === ' ' ? '&nbsp;' : item.char;
+                    html += `<span class="${cls}" data-index="${i}">
+                                <span class="pinyin">${pinyinDisplay}</span>
+                                <span class="char">${charDisplay}</span>
+                            </span>`;
+                }
+                displayArea.innerHTML = html;
+                clearHighlight();
+            }
+
+            // ============================================================
+            // 6. 高亮控制
+            // ============================================================
+            function clearHighlight() {
+                document.querySelectorAll('.char-container.active').forEach(el => {
+                    el.classList.remove('active');
+                });
+            }
+
+            function highlightChar(index) {
+                clearHighlight();
+                if (index < 0) return;
+                const containers = document.querySelectorAll('.char-container');
+                if (index < containers.length) {
+                    containers[index].classList.add('active');
+                    containers[index].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
+            }
+
+            // ============================================================
+            // 7. 语音相关
+            // ============================================================
+
+            // 7.1 获取语音列表（本地 + Edge TTS）
+            function loadVoiceList() {
+                // 先加载本地语音
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length === 0) {
+                    window.speechSynthesis.onvoiceschanged = function() {
+                        loadVoiceList();
+                    };
+                    return;
+                }
+
+                // 清空下拉菜单
+                voiceSelect.innerHTML = '';
+
+                // ---- 本地语音 ----
+                const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
+                if (zhVoices.length > 0) {
+                    const groupLabel = document.createElement('option');
+                    groupLabel.disabled = true;
+                    groupLabel.textContent = '── 浏览器本地语音 ──';
+                    voiceSelect.appendChild(groupLabel);
+
+                    zhVoices.forEach(voice => {
+                        const option = document.createElement('option');
+                        option.value = voice.name;
+                        option.textContent = `${voice.name} (本地)`;
+                        voiceSelect.appendChild(option);
+                    });
+                }
+
+                // ---- Edge TTS 云端语音 ----
+                const edgeVoices = [
+                    { name: 'zh-CN-XiaoxiaoNeural', gender: '女' },
+                    { name: 'zh-CN-YunxiNeural', gender: '男' },
+                    { name: 'zh-CN-YunjianNeural', gender: '男' },
+                    { name: 'zh-CN-XiaoyiNeural', gender: '女' },
+                    { name: 'zh-CN-YunyangNeural', gender: '男' },
+                    { name: 'zh-CN-XiaochenNeural', gender: '女' },
+                    { name: 'zh-CN-XiaohanNeural', gender: '女' },
+                    { name: 'zh-CN-XiaomengNeural', gender: '女' },
+                    { name: 'zh-CN-XiaomoNeural', gender: '女' },
+                    { name: 'zh-CN-XiaoqiuNeural', gender: '女' },
+                    { name: 'zh-CN-XiaoruiNeural', gender: '女' },
+                    { name: 'zh-CN-XiaoshuangNeural', gender: '女' },
+                    { name: 'zh-CN-XiaoxuanNeural', gender: '女' },
+                    { name: 'zh-CN-XiaoyanNeural', gender: '女' },
+                    { name: 'zh-CN-XiaoyouNeural', gender: '女' },
+                    { name: 'zh-CN-XiaozhenNeural', gender: '女' },
+                    { name: 'zh-CN-YunfengNeural', gender: '男' },
+                    { name: 'zh-CN-YunhaoNeural', gender: '男' },
+                    { name: 'zh-CN-YunxiaNeural', gender: '男' },
+                    { name: 'zh-CN-YunyeNeural', gender: '男' },
+                    { name: 'zh-CN-YunyiNeural', gender: '男' },
+                    { name: 'zh-CN-YunzeNeural', gender: '男' },
+                ];
+
+                const groupLabel2 = document.createElement('option');
+                groupLabel2.disabled = true;
+                groupLabel2.textContent = '── Edge TTS 云端语音 ──';
+                voiceSelect.appendChild(groupLabel2);
+
+                edgeVoices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = `edge:${voice.name}`;
+                    option.textContent = `${voice.name} (${voice.gender}声) ☁️`;
+                    voiceSelect.appendChild(option);
+                });
+
+                // 默认选中第一个本地语音
+                if (zhVoices.length > 0) {
+                    voiceSelect.value = zhVoices[0].name;
+                } else {
+                    voiceSelect.value = 'edge:zh-CN-XiaoxiaoNeural';
+                }
+                statusText.textContent = `✅ 已加载 ${zhVoices.length} 个本地语音 + ${edgeVoices.length} 个云端语音`;
+            }
+
+            // 7.2 朗读当前字符（入口）
+            function speakCurrentChar() {
+                if (!isSpeaking) return;
+                if (currentCharIndex >= charsArray.length) {
+                    finishSpeaking();
+                    return;
+                }
+
+                const item = charsArray[currentCharIndex];
+                if (!item.isChinese || item.char.trim() === '') {
+                    currentCharIndex++;
+                    requestAnimationFrame(speakCurrentChar);
+                    return;
+                }
+
+                highlightChar(currentCharIndex);
+
+                const selectedVoice = voiceSelect.value;
+                const textToSpeak = item.char;
+
+                // 判断是否使用 Edge TTS
+                if (selectedVoice && selectedVoice.startsWith('edge:')) {
+                    const voiceName = selectedVoice.replace('edge:', '');
+                    speakWithEdgeTTS(textToSpeak, voiceName);
+                } else {
+                    speakWithWebSpeech(textToSpeak, selectedVoice);
+                }
+            }
+
+            // 7.3 Edge TTS 云端朗读
+            async function speakWithEdgeTTS(text, voice) {
+                try {
+                    const response = await fetch(`${API_BASE}/tts`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            voice: voice,
+                            rate: 0,
+                            pitch: 0
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        const audioBlob = new Blob(
+                            [Uint8Array.from(atob(data.audio), c => c.charCodeAt(0))],
+                            { type: 'audio/mp3' }
+                        );
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+
+                        audio.onended = function() {
+                            currentCharIndex++;
+                            // 跳过非中文
+                            while (currentCharIndex < charsArray.length && !charsArray[currentCharIndex].isChinese) {
+                                currentCharIndex++;
+                            }
+                            if (isSpeaking && currentCharIndex < charsArray.length) {
+                                const delay = parseInt(pauseSlider.value) || 120;
+                                speechTimer = setTimeout(() => {
+                                    speakCurrentChar();
+                                }, delay);
+                            } else if (currentCharIndex >= charsArray.length) {
+                                finishSpeaking();
+                            }
+                        };
+
+                        audio.onerror = function() {
+                            console.warn('Edge TTS 音频播放失败，回退到本地语音');
+                            speakWithWebSpeech(text, voiceSelect.value);
+                        };
+
+                        audio.play();
+                    } else {
+                        throw new Error(data.error || 'Edge TTS 合成失败');
+                    }
+                } catch (error) {
+                    console.warn('Edge TTS 失败，回退到本地语音:', error);
+                    speakWithWebSpeech(text, voiceSelect.value);
+                }
+            }
+
+            // 7.4 浏览器本地语音朗读
+            function speakWithWebSpeech(text, voiceName) {
+                utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+
+                // 设置音色
+                if (voiceName && !voiceName.startsWith('edge:')) {
+                    const voices = window.speechSynthesis.getVoices();
+                    const matchedVoice = voices.find(v => v.name === voiceName);
+                    if (matchedVoice) {
+                        utterance.voice = matchedVoice;
+                    }
+                }
+
+                utterance.rate = parseFloat(rateSlider.value) || 0.75;
+                utterance.pitch = 1.1;
+                utterance.volume = 1.0;
+
+                utterance.onend = function() {
+                    utterance = null;
+                    currentCharIndex++;
+                    while (currentCharIndex < charsArray.length && !charsArray[currentCharIndex].isChinese) {
+                        currentCharIndex++;
+                    }
+                    if (isSpeaking && currentCharIndex < charsArray.length) {
+                        const delay = parseInt(pauseSlider.value) || 120;
+                        speechTimer = setTimeout(() => {
+                            speakCurrentChar();
+                        }, delay);
+                    } else if (currentCharIndex >= charsArray.length) {
+                        finishSpeaking();
+                    }
+                };
+
+                utterance.onerror = function(event) {
+                    console.warn('语音合成错误:', event);
+                    utterance = null;
+                    currentCharIndex++;
+                    while (currentCharIndex < charsArray.length && !charsArray[currentCharIndex].isChinese) {
+                        currentCharIndex++;
+                    }
+                    if (isSpeaking && currentCharIndex < charsArray.length) {
+                        const delay = parseInt(pauseSlider.value) || 120;
+                        speechTimer = setTimeout(() => {
+                            speakCurrentChar();
+                        }, delay);
+                    } else {
+                        finishSpeaking();
+                    }
+                };
+
+                statusText.textContent = `🔊 朗读中... (${currentCharIndex + 1}/${charsArray.length})`;
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // 7.5 开始朗读
+            function startSpeaking() {
+                if (isSpeaking) {
+                    // 如果正在朗读，支持从暂停处继续
+                    if (isPaused) {
+                        isPaused = false;
+                        isSpeaking = true;
+                        speakBtn.textContent = '⏸ 朗读中...';
+                        speakBtn.classList.remove('success');
+                        speakBtn.classList.add('primary');
+                        statusText.textContent = `🔊 继续朗读... (${currentCharIndex + 1}/${charsArray.length})`;
+                        speakCurrentChar();
+                        return;
+                    }
+                    stopSpeaking();
+                }
+
+                if (!charsArray || charsArray.length === 0) {
+                    statusText.textContent = '⚠️ 请先点击「标注拼音」';
+                    return;
+                }
+
+                const hasChinese = charsArray.some(item => item.isChinese);
+                if (!hasChinese) {
+                    statusText.textContent = '⚠️ 没有找到中文字符';
+                    return;
+                }
+
+                if (!window.speechSynthesis) {
+                    statusText.textContent = '❌ 浏览器不支持语音合成';
+                    return;
+                }
+
+                // 检查当前位置是否有效
+                const isValid = currentCharIndex < charsArray.length &&
+                    charsArray[currentCharIndex].isChinese;
+
+                if (!isValid) {
+                    currentCharIndex = 0;
+                    while (currentCharIndex < charsArray.length && !charsArray[currentCharIndex].isChinese) {
+                        currentCharIndex++;
+                    }
+                }
+
+                if (currentCharIndex >= charsArray.length) {
+                    statusText.textContent = '⚠️ 没有可朗读的内容';
+                    return;
+                }
+
+                isSpeaking = true;
+                isPaused = false;
+                speakBtn.textContent = '⏸ 朗读中...';
+                speakBtn.classList.remove('success');
+                speakBtn.classList.add('primary');
+                statusText.textContent = `🔊 朗读中... (${currentCharIndex + 1}/${charsArray.length})`;
+                speakCurrentChar();
+            }
+
+            // 7.6 停止朗读
+            function stopSpeaking() {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+                // 取消所有正在进行的音频播放（Edge TTS）
+                const audioElements = document.querySelectorAll('audio');
+                audioElements.forEach(audio => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                });
+
+                isSpeaking = false;
+                isPaused = true; // 标记为暂停状态
+                speakBtn.textContent = '▶ 继续';
+                speakBtn.classList.remove('primary');
+                speakBtn.classList.add('success');
+                if (speechTimer) {
+                    clearTimeout(speechTimer);
+                    speechTimer = null;
+                }
+                utterance = null;
+                statusText.textContent = `⏸ 已暂停 (${currentCharIndex + 1}/${charsArray.length})`;
+            }
+
+            // 7.7 完成朗读
+            function finishSpeaking() {
+                isSpeaking = false;
+                isPaused = false;
+                speakBtn.textContent = '▶ 朗读';
+                speakBtn.classList.remove('primary');
+                speakBtn.classList.add('success');
+                statusText.textContent = '✅ 朗读完成';
+                clearHighlight();
+                if (speechTimer) {
+                    clearTimeout(speechTimer);
+                    speechTimer = null;
+                }
+                utterance = null;
+                currentCharIndex = 0;
+            }
+
+            // ============================================================
+            // 8. 辅助功能
+            // ============================================================
+
+            function clearAll() {
+                stopSpeaking();
+                textInput.value = '';
+                displayArea.innerHTML = '<span style="color:#b2bec3; font-size:18px;">点击「标注拼音」开始</span>';
+                charsArray = [];
+                currentCharIndex = 0;
+                statusText.textContent = '已清空';
+                modeHint.textContent = '模式: 拼音';
+            }
+
+            function loadSample() {
+                const samples = {
+                    'zh-CN': '春眠不觉晓，处处闻啼鸟。夜来风雨声，花落知多少。'
+                };
+                textInput.value = samples['zh-CN'];
+                statusText.textContent = '示例已加载，点击「标注拼音」';
+                annotateBtn.click();
+            }
+
+            // ============================================================
+            // 9. 事件绑定
+            // ============================================================
+
+            annotateBtn.addEventListener('click', async function() {
+                const text = textInput.value;
+                const result = await annotateText(text);
+                if (result && result.length > 0) {
+                    modeHint.textContent = '模式: 拼音';
+                    // 重置索引
+                    currentCharIndex = 0;
+                    // 重置按钮状态
+                    if (isSpeaking) {
+                        stopSpeaking();
+                    }
+                    speakBtn.textContent = '▶ 朗读';
+                    speakBtn.classList.remove('primary');
+                    speakBtn.classList.add('success');
+                }
+            });
+
+            speakBtn.addEventListener('click', function() {
+                startSpeaking();
+            });
+
+            stopBtn.addEventListener('click', function() {
+                if (isSpeaking) {
+                    stopSpeaking();
+                } else {
+                    statusText.textContent = '⏹ 已停止';
+                    clearHighlight();
+                    currentCharIndex = 0;
+                }
+            });
+
+            clearBtn.addEventListener('click', clearAll);
+            sampleBtn.addEventListener('click', loadSample);
+
+            // 语速滑块
+            rateSlider.addEventListener('input', function() {
+                rateValue.textContent = parseFloat(this.value).toFixed(2);
+            });
+
+            // 停顿滑块
+            pauseSlider.addEventListener('input', function() {
+                pauseValue.textContent = this.value;
+            });
+
+            // Ctrl+Enter 快捷键
+            textInput.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    annotateBtn.click();
+                }
+            });
+
+            // ============================================================
+            // 10. 页面初始化
+            // ============================================================
+
+            window.addEventListener('load', function() {
+                // 预加载语音列表
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.getVoices();
+                    setTimeout(() => {
+                        window.speechSynthesis.getVoices();
+                        loadVoiceList();
+                    }, 200);
+                }
+
+                // 加载示例
+                setTimeout(() => {
+                    loadSample();
+                }, 400);
+            });
+
+            window.addEventListener('beforeunload', function() {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+            });
+
+            console.log('📖 逐字拼音朗读器已加载 (Edge TTS 版)');
+            console.log(`🔗 API 地址: ${API_BASE}/tts`);
+
+        })();
+    </script>
+</body>
+</html>

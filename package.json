@@ -1,0 +1,9 @@
+{
+  "name": "my-tts-app",
+  "version": "1.0.0",
+  "description": "Edge TTS with Vercel",
+  "type": "module",
+  "dependencies": {
+    "edge-tts": "^1.0.0"
+  }
+}
