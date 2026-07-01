@@ -1,4 +1,6 @@
 {
+  "outputDirectory": ".",
+  
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -10,7 +12,7 @@
     }
   ],
   "buildCommand": "npm install --no-optional && echo '跳过构建'",
-  
+
    "functions": {
     "api/tts.js": {
       "maxDuration": 30
