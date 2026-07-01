@@ -293,7 +293,7 @@
     
     <!-- 加载 pinyin-pro 的 UMD 版本（浏览器兼容） -->
     <script src="https://cdn.jsdelivr.net/npm/pinyin-pro/dist/index.js"></script>
-    
+
 
 </head>
 <body>
@@ -561,12 +561,12 @@
                 groupLabel2.textContent = '── Edge TTS 云端语音 ──';
                 voiceSelect.appendChild(groupLabel2);
 
-                edgeVoices.forEach(voice => {
-                    const option = document.createElement('option');
-                    option.value = `edge:${voice.name}`;
-                    option.textContent = `${voice.name} (${voice.gender}声) ☁️`;
-                    voiceSelect.appendChild(option);
-                });
+                //edgeVoices.forEach(voice => {
+                  //  const option = document.createElement('option');
+                    //option.value = `edge:${voice.name}`;
+                    //option.textContent = `${voice.name} (${voice.gender}声) ☁️`;
+                    //voiceSelect.appendChild(option);
+                //});
 
                 // 默认选中第一个本地语音
                 if (zhVoices.length > 0) {
