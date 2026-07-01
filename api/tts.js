@@ -1,7 +1,13 @@
 // api/tts.js - Vercel Serverless Function
-import { EdgeTTS } from 'edge-tts';
+
+//import { EdgeTTS } from 'edge-tts';
+
+// 动态导入，自动适配不同的导出方式
+const EdgeTTSModule = await import('edge-tts');
+const EdgeTTS = EdgeTTSModule.default || EdgeTTSModule.EdgeTTS || EdgeTTSModule;
 
 export default async function handler(req, res) {
+     
     // 只允许 POST 请求
     if (req.method !== 'POST') {
         return res.status(405).json({ error: '请使用 POST 请求' });
