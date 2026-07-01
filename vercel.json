@@ -1,5 +1,6 @@
 {
   "buildCommand": "npm install && echo '跳过 TypeScript 类型检查'",
+   "outputDirectory": "frontend",
   "rewrites": [
     {
       "source": "/api/(.*)",
