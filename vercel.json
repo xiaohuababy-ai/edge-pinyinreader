@@ -8,5 +8,12 @@
       "source": "/(.*)",
       "destination": "/frontend/index.html"
     }
-  ]
+  ],
+  "buildCommand": "npm install --no-optional && echo '跳过构建'",
+  
+   "functions": {
+    "api/tts.js": {
+      "maxDuration": 30
+    }
+  }
 }
